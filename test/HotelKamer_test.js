@@ -162,11 +162,38 @@ contract('HotelKamer', (accounts) => {
     })
   })
 
-  it('Contract balans', async () => {
-    const balans = await balance.current(kamerContract.address, unit = 'wei');
-    console.log(balans)
-    const ophalenBalans = await kamerContract.ToonBalans()
-    console.log(ophalenBalans)
-    assert.equal(balans.toString(), ophalenBalans.toString(), "Balans niet gelijk")
+  describe('Balans', () => {
+    it('Contract balans', async () => {
+      const balans = await balance.current(kamerContract.address, unit = 'wei')
+      const ophalenBalans = await kamerContract.ToonBalans()
+      assert.equal(balans.toString(), ophalenBalans.toString(), "Balans niet gelijk")
+    })
+    it('Eigenaar kan balans uitbetalen', async () => {
+      const trackerContract = await balance.tracker(kamerContract.address, unit = 'wei')
+      const trackerEigenaar = await balance.tracker(accounts[0], unit = 'wei')
+
+      await kamerContract.Uitbetaling()
+      const nieuwContractBalans = await trackerContract.get()
+      assert.equal(0, nieuwContractBalans, 'Contract balans is nu niet null')
+
+      const deltaContract = trackerContract.delta()
+      const deltaEigenaar = trackerEigenaar.delta()
+      assert.equal(deltaContract.toString(), deltaEigenaar.toString(), 'Niet volledige balans is overgezet naar eigenaar')
+    })
+    it('Niet-eigenaar kan geen uitbetaling doen', async () => {
+      const trackerContract = await balance.tracker(kamerContract.address, unit = 'wei')
+      try {
+        await kamerContract.Uitbetaling({ from: accounts[2] })
+      }
+      catch (fout) {
+        assert.equal(fout,
+          ERR_REQUIRE + ' revert Ownable: caller is not the owner -- Reason given: Ownable: caller is not the owner.',
+          'Foutmelding klopt niet');
+      }
+      finally {
+        const contractDelta = await trackerContract.delta()
+        assert.equal('0', contractDelta.toString(), 'Contract balans mag niet veranderd zijn want de uitbetaling mocht niet doorgaan')
+      }
+    })
   })
 })
