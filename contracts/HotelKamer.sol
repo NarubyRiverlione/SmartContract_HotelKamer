@@ -9,13 +9,14 @@ contract HotelKamer is Ownable {
         uint256 Nummer;
         KamerStatus Status;
         uint256 Prijs; // in wei
+        uint256 AantalGeboekteDagen;
+        address Boeker;
     }
 
     Kamer public kamer;
 
     constructor() public {
-        kamer.Status = KamerStatus.Vrij;
-        kamer.Prijs = 0.1 ether;
+        Reset();
     }
 
     modifier BetalingHogerDanPrijs(uint256 _betaling) {
@@ -24,6 +25,13 @@ contract HotelKamer is Ownable {
     }
     modifier KamerMoetVrijZijn() {
         require(kamer.Status == KamerStatus.Vrij, "Kamer is niet vrij");
+        _;
+    }
+    modifier BeschikbareGeboekteDagen() {
+        require(
+            kamer.AantalGeboekteDagen > 0,
+            "Alle geboekte dagen zijn opgebruikt"
+        );
         _;
     }
 
@@ -39,6 +47,13 @@ contract HotelKamer is Ownable {
         kamer.Status = KamerStatus.Vrij;
     }
 
+    function Reset() public onlyOwner {
+        kamer.Status = KamerStatus.Vrij;
+        kamer.Prijs = 0.1 ether;
+        kamer.AantalGeboekteDagen = 0;
+        kamer.Boeker = address(this); // default to contract address
+    }
+
     function MaakBoeking()
         public
         payable
@@ -46,15 +61,20 @@ contract HotelKamer is Ownable {
         KamerMoetVrijZijn
     {
         kamer.Status = KamerStatus.Geboekt;
-        //  emit Received(msg.sender, msg.value);
+        kamer.AantalGeboekteDagen = msg.value / kamer.Prijs;
+        kamer.Boeker = msg.sender;
     }
 
-    function ToonBalans() public view returns (uint256) {
+    function ToonBalans() public view onlyOwner returns (uint256) {
         return address(this).balance;
     }
 
     function Uitbetaling() public onlyOwner() {
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success, "Transfer failed.");
+    }
+
+    function OpenDeur() public BeschikbareGeboekteDagen {
+        kamer.AantalGeboekteDagen -= 1;
     }
 }
