@@ -34,6 +34,13 @@ contract HotelKamer is Ownable {
         );
         _;
     }
+    modifier EnkelDoorBoeker() {
+        require(
+            msg.sender == kamer.Boeker,
+            "Enkel de boeker mag deze actie doen"
+        );
+        _;
+    }
 
     function ZetPrijs(uint256 _prijs) public onlyOwner {
         kamer.Prijs = _prijs;
@@ -74,7 +81,7 @@ contract HotelKamer is Ownable {
         require(success, "Transfer failed.");
     }
 
-    function OpenDeur() public BeschikbareGeboekteDagen {
+    function OpenDeur() public BeschikbareGeboekteDagen EnkelDoorBoeker {
         kamer.AantalGeboekteDagen -= 1;
     }
 }

@@ -178,7 +178,7 @@ contract('HotelKamer', (accounts) => {
     it('Boek 1 dag, open deur 1x', async () => {
       try {
         await kamerContract.MaakBoeking({ value: StandaardPrijs, from: accounts[1] })
-        await kamerContract.OpenDeur()
+        await kamerContract.OpenDeur({ from: accounts[1] })
         const kamer = await kamerContract.kamer.call()
         assert.equal(0, kamer.AantalGeboekteDagen, 'Na 1x deur openen moet aantal beschikbare dagen 0 zijn')
       }
@@ -189,16 +189,16 @@ contract('HotelKamer', (accounts) => {
     it('Boek 2 dagen, open deur 3x moet fout geven', async () => {
       try {
         await kamerContract.MaakBoeking({ value: StandaardPrijs * 2, from: accounts[1] })
-        await kamerContract.OpenDeur()
+        await kamerContract.OpenDeur({ from: accounts[1] })
 
         const kamerNa1dag = await kamerContract.kamer.call()
         assert.equal(1, kamerNa1dag.AantalGeboekteDagen, 'Na 1x deur openen moet aantal beschikbare dagen 1 zijn')
-        await kamerContract.OpenDeur()
+        await kamerContract.OpenDeur({ from: accounts[1] })
 
         const kamerNa2dagen = await kamerContract.kamer.call()
         assert.equal(0, kamerNa2dagen.AantalGeboekteDagen, 'Na 2x deur openen moet aantal beschikbare dagen 0 zijn')
         // volgende moet fout geven
-        await kamerContract.OpenDeur()
+        await kamerContract.OpenDeur({ from: accounts[1] })
       }
       catch (fout) {
         assert.equal(fout,
@@ -208,6 +208,21 @@ contract('HotelKamer', (accounts) => {
       finally {
         const kamer = await kamerContract.kamer.call()
         assert.equal(0, kamer.AantalGeboekteDagen, 'Aantal beschikbare dagen moet nog steeds 0 zijn')
+      }
+    })
+    it('Probeer de open deur te openen als niet-boeker', async () => {
+      try {
+        await kamerContract.MaakBoeking({ value: StandaardPrijs, from: accounts[1] })
+        await kamerContract.OpenDeur({ from: accounts[2] })
+      }
+      catch (fout) {
+        assert.equal(fout,
+          ERR_REQUIRE + ' revert Enkel de boeker mag deze actie doen -- Reason given: Enkel de boeker mag deze actie doen.',
+          'Verkeerde foutmelding')
+      }
+      finally {
+        const kamer = await kamerContract.kamer.call()
+        assert.equal(1, kamer.AantalGeboekteDagen, 'Aantal beschikbare dagen moet nog steeds 1 zijn')
       }
     })
   })
