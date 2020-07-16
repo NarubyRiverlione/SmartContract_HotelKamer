@@ -11,20 +11,19 @@ contract('HotelKamer', (accounts) => {
 
   before(async () => {
     kamerContract = await KamerContract.deployed()
+    console.log(`Contract adres = ${kamerContract.address}`)
   })
   beforeEach(async () => {
     await kamerContract.Reset()
   })
 
   describe('Initiële contract waarden', () => {
-    it('Nieuwe kamer moet prijs 0.1 Eth zijn', async () => {
+    it('Waarden na reset', async () => {
       const kamer = await kamerContract.kamer.call()
       assert.equal(StandaardPrijs, kamer.Prijs, 'Prijs van een nieuwe kamer is niet 0.1 Eth')
-    })
-
-    it('Nieuwe kamer moet status vrij hebben', async () => {
-      const kamer = await kamerContract.kamer.call()
-      assert.equal(kamer.Status.toString(), 0, 'Status van een nieuwe kamer is niet vrij')
+      assert.equal(0, kamer.Status.toString(), 'Status van een nieuwe kamer is niet vrij')
+      assert.equal(kamerContract.address, kamer.Boeker, 'De Boeker moet standaard het adres van het contract zijn')
+      assert.equal(0, kamer.AantalGeboekteDagen, 'Aantal geboekte dagen moet 0 zijn')
     })
 
   })
@@ -176,15 +175,13 @@ contract('HotelKamer', (accounts) => {
 
   describe('Gebruik geboekte dagen', () => {
     it('Boek 1 dag, open deur 1x', async () => {
-      try {
-        await kamerContract.MaakBoeking({ value: StandaardPrijs, from: accounts[1] })
-        await kamerContract.OpenDeur({ from: accounts[1] })
-        const kamer = await kamerContract.kamer.call()
-        assert.equal(0, kamer.AantalGeboekteDagen, 'Na 1x deur openen moet aantal beschikbare dagen 0 zijn')
-      }
-      catch (fout) {
-        assert.isNull(fout, "De deur moet 1x open gaan")
-      }
+      await kamerContract.MaakBoeking({ value: StandaardPrijs, from: accounts[1] })
+      await kamerContract.OpenDeur({ from: accounts[1] })
+      const kamer = await kamerContract.kamer.call()
+      assert.equal(0, kamer.AantalGeboekteDagen, 'Na 1x deur openen moet aantal beschikbare dagen 0 zijn')
+      assert.equal(0, kamer.Status.toString(), 'De kamer moet terug vrij zijn')
+      assert.equal(kamerContract.address, kamer.Boeker, 'Standaard is Boeker = contract adres')
+
     })
     it('Boek 2 dagen, open deur 3x moet fout geven', async () => {
       try {

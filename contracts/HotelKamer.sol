@@ -83,5 +83,9 @@ contract HotelKamer is Ownable {
 
     function OpenDeur() public BeschikbareGeboekteDagen EnkelDoorBoeker {
         kamer.AantalGeboekteDagen -= 1;
+        if (kamer.AantalGeboekteDagen == 0) {
+            kamer.Status = KamerStatus.Vrij;
+            kamer.Boeker = address(this); // default to contract address
+        }
     }
 }
