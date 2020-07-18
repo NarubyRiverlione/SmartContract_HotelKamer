@@ -70,12 +70,18 @@ module.exports = {
     //   network_id: "*",       // Any network (default: none)
     //   gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
     // },
-    // test: {
-    //   host: "127.0.0.1",     // Localhost (default: none)
-    //   port: 7545,            // Standard Ethereum port (default: none)
-    //   network_id: "*",       // Any network (default: none)
-    //   gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
-    // },
+
+    /*
+    Bij elke test run wordt het contract opnieuw gepubliceerd
+      ==> telkens nieuw contract adres --> aanpassing nodig in Client
+      ==> niet runnen op Ganache UI maar op Ganache CLi zodat er scheiding is van Test en Client
+    */
+    test: {
+      host: "127.0.0.1",     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: "*",       // Any network (default: none)
+      gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
+    },
 
     // Another network with more advanced options...
     // advanced: {

@@ -5,6 +5,11 @@ const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const KamerContract = artifacts.require('HotelKamer')
 const ERR_REQUIRE = 'Error: Returned error: VM Exception while processing transaction:'
 
+/*
+ Bij elke test run wordt het contract opnieuw gepubliceerd
+ ==> telkens nieuw contract adres --> aanpassing nodig in Client
+ ==> niet runnen op Ganache UI maar op Ganache CLi zodat er scheiding is van Test en Client
+*/
 contract('HotelKamer', (accounts) => {
   let kamerContract
   const StandaardPrijs = web3.utils.toWei('0.1', 'ether')
