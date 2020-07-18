@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.11;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract HotelKamer is Ownable {
+    using SafeMath for uint256;
+
     enum KamerStatus {Vrij, Geboekt, Onbeschikbaar}
 
     struct Kamer {
@@ -68,7 +71,7 @@ contract HotelKamer is Ownable {
         KamerMoetVrijZijn
     {
         kamer.Status = KamerStatus.Geboekt;
-        kamer.AantalGeboekteDagen = msg.value / kamer.Prijs;
+        kamer.AantalGeboekteDagen = SafeMath.div(msg.value, kamer.Prijs);
         kamer.Boeker = msg.sender;
     }
 
@@ -83,7 +86,7 @@ contract HotelKamer is Ownable {
     }
 
     function OpenDeur() external BeschikbareGeboekteDagen EnkelDoorBoeker {
-        kamer.AantalGeboekteDagen -= 1;
+        kamer.AantalGeboekteDagen = SafeMath.sub(kamer.AantalGeboekteDagen, 1);
         if (kamer.AantalGeboekteDagen == 0) {
             kamer.Status = KamerStatus.Vrij;
             kamer.Boeker = address(this); // default to contract address
