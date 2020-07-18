@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.9;
+pragma solidity 0.6.11;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HotelKamer is Ownable {
@@ -77,7 +77,8 @@ contract HotelKamer is Ownable {
     }
 
     function Uitbetaling() external onlyOwner() {
-        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        // (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        bool success = msg.sender.send(address(this).balance);
         require(success, "Transfer failed.");
     }
 
