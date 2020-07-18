@@ -42,15 +42,15 @@ contract HotelKamer is Ownable {
         _;
     }
 
-    function ZetPrijs(uint256 _prijs) public onlyOwner {
+    function ZetPrijs(uint256 _prijs) external onlyOwner {
         kamer.Prijs = _prijs;
     }
 
-    function ZetGeboekt() public onlyOwner {
+    function ZetGeboekt() external onlyOwner {
         kamer.Status = KamerStatus.Geboekt;
     }
 
-    function ZetVrij() public onlyOwner {
+    function ZetVrij() external onlyOwner {
         kamer.Status = KamerStatus.Vrij;
     }
 
@@ -62,7 +62,7 @@ contract HotelKamer is Ownable {
     }
 
     function MaakBoeking()
-        public
+        external
         payable
         BetalingHogerDanPrijs(msg.value)
         KamerMoetVrijZijn
@@ -72,16 +72,16 @@ contract HotelKamer is Ownable {
         kamer.Boeker = msg.sender;
     }
 
-    function ToonBalans() public view onlyOwner returns (uint256) {
+    function ToonBalans() external view onlyOwner returns (uint256) {
         return address(this).balance;
     }
 
-    function Uitbetaling() public onlyOwner() {
+    function Uitbetaling() external onlyOwner() {
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success, "Transfer failed.");
     }
 
-    function OpenDeur() public BeschikbareGeboekteDagen EnkelDoorBoeker {
+    function OpenDeur() external BeschikbareGeboekteDagen EnkelDoorBoeker {
         kamer.AantalGeboekteDagen -= 1;
         if (kamer.AantalGeboekteDagen == 0) {
             kamer.Status = KamerStatus.Vrij;
