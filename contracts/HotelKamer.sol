@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.11;
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract HotelKamer is Ownable {
+contract HotelKamer is Ownable, Pausable {
     using SafeMath for uint256;
 
     enum KamerStatus {Vrij, Geboekt, Onbeschikbaar}
@@ -18,7 +19,7 @@ contract HotelKamer is Ownable {
 
     Kamer public kamer;
 
-    constructor() public {
+    constructor() public Pausable() {
         Reset();
     }
 
@@ -45,19 +46,20 @@ contract HotelKamer is Ownable {
         _;
     }
 
-    function ZetPrijs(uint256 _prijs) external onlyOwner {
+    function ZetPrijs(uint256 _prijs) external onlyOwner whenNotPaused() {
         kamer.Prijs = _prijs;
     }
 
-    function ZetGeboekt() external onlyOwner {
+    function ZetGeboekt() external onlyOwner whenNotPaused() {
         kamer.Status = KamerStatus.Geboekt;
     }
 
-    function ZetVrij() external onlyOwner {
+    function ZetVrij() external onlyOwner whenNotPaused() {
         kamer.Status = KamerStatus.Vrij;
     }
 
     function Reset() public onlyOwner {
+        if (paused()) _unpause();
         kamer.Status = KamerStatus.Vrij;
         kamer.Prijs = 0.1 ether;
         kamer.AantalGeboekteDagen = 0;
@@ -69,14 +71,11 @@ contract HotelKamer is Ownable {
         payable
         BetalingHogerDanPrijs(msg.value)
         KamerMoetVrijZijn
+        whenNotPaused()
     {
         kamer.Status = KamerStatus.Geboekt;
         kamer.AantalGeboekteDagen = SafeMath.div(msg.value, kamer.Prijs);
         kamer.Boeker = msg.sender;
-    }
-
-    function ToonBalans() external view onlyOwner returns (uint256) {
-        return address(this).balance;
     }
 
     function Uitbetaling() external onlyOwner() {
@@ -85,11 +84,20 @@ contract HotelKamer is Ownable {
         require(success, "Transfer failed.");
     }
 
-    function OpenDeur() external BeschikbareGeboekteDagen EnkelDoorBoeker {
+    function OpenDeur()
+        external
+        BeschikbareGeboekteDagen
+        EnkelDoorBoeker
+        whenNotPaused()
+    {
         kamer.AantalGeboekteDagen = SafeMath.sub(kamer.AantalGeboekteDagen, 1);
         if (kamer.AantalGeboekteDagen == 0) {
             kamer.Status = KamerStatus.Vrij;
             kamer.Boeker = address(this); // default to contract address
         }
+    }
+
+    function HandRem() external onlyOwner() {
+        _pause();
     }
 }

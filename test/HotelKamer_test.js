@@ -81,6 +81,12 @@ contract('HotelKamer', (accounts) => {
   })
 
   describe('Zet status Vrij', () => {
+    it('Zet kamer geboekt -> vrij', async () => {
+      await kamerContract.ZetGeboekt()
+      await kamerContract.ZetVrij()
+      const kamer = await kamerContract.kamer.call()
+      assert.equal(kamer.Status, 0, 'Status moet nu terug vrij (0) zijn ')
+    })
     it('Een niet-eigenaar kan kamer niet op vrij zetten', async () => {
       try {
         await kamerContract.ZetGeboekt() // als contract eigenaar om een zeker start situatie te hebben
@@ -230,11 +236,6 @@ contract('HotelKamer', (accounts) => {
   })
 
   describe('Balans', () => {
-    it('Contract balans', async () => {
-      const balans = await balance.current(kamerContract.address, unit = 'wei')
-      const ophalenBalans = await kamerContract.ToonBalans()
-      assert.equal(balans.toString(), ophalenBalans.toString(), "Balans niet gelijk")
-    })
     it('Eigenaar kan balans uitbetalen', async () => {
       const trackerContract = await balance.tracker(kamerContract.address, unit = 'wei')
       const trackerEigenaar = await balance.tracker(accounts[0], unit = 'wei')
@@ -261,6 +262,27 @@ contract('HotelKamer', (accounts) => {
         const contractDelta = await trackerContract.delta()
         assert.equal('0', contractDelta.toString(), 'Contract balans mag niet veranderd zijn want de uitbetaling mocht niet doorgaan')
       }
+    })
+  })
+
+  describe('Pauzeer contract', () => {
+    it('Pauze en probeer ZetVrij --> mag niet lukken', async () => {
+      try {
+        await kamerContract.HandRem()
+        await kamerContract.ZetVrij()
+      }
+      catch (fout) {
+        assert.equal(fout,
+          ERR_REQUIRE + ' revert Pausable: paused -- Reason given: Pausable: paused.',
+          'Verkeerde foutmelding')
+      }
+    })
+    it('Pauze en Reset en probeer ZetVrij -> moet lukken', async () => {
+      await kamerContract.HandRem()
+      await kamerContract.Reset()
+      await kamerContract.ZetVrij()
+      const kamer = await kamerContract.kamer.call()
+      assert.equal(kamer.Status, 0, 'Status moet nu terug vrij (0) zijn ')
     })
   })
 })
