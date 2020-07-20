@@ -86,9 +86,9 @@ contract HotelKamer is Ownable, Pausable {
 
     function OpenDeur()
         external
-        BeschikbareGeboekteDagen
-        EnkelDoorBoeker
         whenNotPaused()
+        EnkelDoorBoeker
+        BeschikbareGeboekteDagen
     {
         kamer.AantalGeboekteDagen = SafeMath.sub(kamer.AantalGeboekteDagen, 1);
         if (kamer.AantalGeboekteDagen == 0) {
