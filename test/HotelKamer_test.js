@@ -26,7 +26,7 @@ contract('HotelKamer', (accounts) => {
     it('Waarden na reset', async () => {
       const kamer = await kamerContract.kamer.call()
       assert.equal(StandaardPrijs, kamer.Prijs, 'Prijs van een nieuwe kamer is niet 0.1 Eth')
-      assert.equal(0, kamer.Status.toString(), 'Status van een nieuwe kamer is niet vrij')
+      assert.isTrue(kamer.Beschikbaar, 'Nieuwe kamer moet beschikbaar zijn')
       assert.equal(kamerContract.address, kamer.Boeker, 'De Boeker moet standaard het adres van het contract zijn')
       assert.equal(0, kamer.AantalGeboekteDagen, 'Aantal geboekte dagen moet 0 zijn')
     })
@@ -61,7 +61,7 @@ contract('HotelKamer', (accounts) => {
     it('Zet kamer geboekt', async () => {
       await kamerContract.ZetGeboekt()
       const kamer = await kamerContract.kamer.call()
-      assert.equal(kamer.Status, 1, 'Status moet nu geboekt (1) zijn ')
+      assert.isFalse(kamer.Beschikbaar, 'Kamer mag niet beschikbaar zijn')
     })
     it('Een niet-eigenaar kan kamer niet op geboekt zetten', async () => {
       try {
@@ -74,7 +74,7 @@ contract('HotelKamer', (accounts) => {
       }
       finally {
         const kamer = await kamerContract.kamer.call()
-        assert.equal(0, kamer.Status.toString(), 'Status moet nog steeds vrij (0) zijn ')
+        assert.isTrue(kamer.Beschikbaar, 'Kamer moet nog steeds beschikbaar zijn')
         assert.equal(kamerContract.address, kamer.Boeker, 'Standaard is Boeker = contract adres')
       }
     })
@@ -85,7 +85,7 @@ contract('HotelKamer', (accounts) => {
       await kamerContract.ZetGeboekt()
       await kamerContract.ZetVrij()
       const kamer = await kamerContract.kamer.call()
-      assert.equal(kamer.Status, 0, 'Status moet nu terug vrij (0) zijn ')
+      assert.isTrue(kamer.Beschikbaar, 'Status moet nu terug vrij (0) zijn ')
     })
     it('Een niet-eigenaar kan kamer niet op vrij zetten', async () => {
       try {
@@ -99,7 +99,7 @@ contract('HotelKamer', (accounts) => {
       }
       finally {
         const kamer = await kamerContract.kamer.call()
-        assert.equal(kamer.Status, 1, 'Status moet nog steeds geboekt (1) zijn ')
+        assert.isFalse(kamer.Beschikbaar, 'Status moet nog steeds geboekt (1) zijn ')
       }
     })
   })
@@ -110,7 +110,7 @@ contract('HotelKamer', (accounts) => {
       await kamerContract.MaakBoeking({ value: StandaardPrijs, from: accounts[1] })
 
       const kamer = await kamerContract.kamer.call()
-      assert.equal(1, kamer.Status, 'Status moet nu geboekt (1) zijn ')
+      assert.isFalse(kamer.Beschikbaar, 'Status moet nu geboekt (1) zijn ')
       assert.equal(1, kamer.AantalGeboekteDagen, 'Aantal geboekte dagen moet 1 zijn')
       assert.equal(accounts[1], kamer.Boeker, 'Adres van Boeker is niet juist')
       const delta = await tracker.delta()
@@ -124,7 +124,7 @@ contract('HotelKamer', (accounts) => {
       await kamerContract.MaakBoeking({ value: boekingBedrag, from: accounts[1] })
 
       const kamer = await kamerContract.kamer.call()
-      assert.equal(1, kamer.Status, 'Status moet nu geboekt (1) zijn ')
+      assert.isFalse(kamer.Beschikbaar, 'Status moet nu geboekt (1) zijn ')
       assert.equal(3, kamer.AantalGeboekteDagen.toString(), 'Aantal geboekte dagen moet 3 zijn')
       assert.equal(accounts[1], kamer.Boeker, 'Adres van Boeker is niet juist')
       const delta = await tracker.delta()
@@ -143,7 +143,7 @@ contract('HotelKamer', (accounts) => {
       }
       finally {
         const kamer = await kamerContract.kamer.call()
-        assert.equal(0, kamer.Status.toString(), 'Status moet nog vrij (0) zijn ')
+        assert.isTrue(kamer.Beschikbaar, 'Status moet nog vrij (0) zijn ')
         assert.equal(0, kamer.AantalGeboekteDagen.toString(), 'Aantal geboekte dagen moet 0 zijn')
         assert.equal(kamerContract.address, kamer.Boeker, 'Standaard is Boeker = contract adres')
         const delta = await tracker.delta()
@@ -162,7 +162,7 @@ contract('HotelKamer', (accounts) => {
       }
       finally {
         const kamer = await kamerContract.kamer.call()
-        assert.equal(kamer.Status, 1, 'Status moet nu steeds geboekt (1) zijn ')
+        assert.isFalse(kamer.Beschikbaar, 'Status moet nu steeds geboekt (1) zijn ')
         assert.equal(0, kamer.AantalGeboekteDagen.toString(), 'Aantal geboekte dagen moet 0 zijn')
         assert.equal(kamerContract.address, kamer.Boeker, 'Standaard is Boeker = contract adres')
         const delta = await tracker.delta()
@@ -190,7 +190,7 @@ contract('HotelKamer', (accounts) => {
       await kamerContract.OpenDeur({ from: accounts[1] })
       const kamer = await kamerContract.kamer.call()
       assert.equal(0, kamer.AantalGeboekteDagen, 'Na 1x deur openen moet aantal beschikbare dagen 0 zijn')
-      assert.equal(0, kamer.Status.toString(), 'De kamer moet terug vrij zijn')
+      assert.isTrue(kamer.Beschikbaar, 'De kamer moet terug vrij zijn')
       assert.equal(kamerContract.address, kamer.Boeker, 'Standaard is Boeker = contract adres')
 
     })
@@ -205,10 +205,11 @@ contract('HotelKamer', (accounts) => {
 
         const kamerNa2dagen = await kamerContract.kamer.call()
         assert.equal(0, kamerNa2dagen.AantalGeboekteDagen, 'Na 2x deur openen moet aantal beschikbare dagen 0 zijn')
-        // volgende moet fout geven
+        // volgende moet fout geven 
         await kamerContract.OpenDeur({ from: accounts[1] })
       }
       catch (fout) {
+        // na laatste dag wordt de Boeker op het contract adres gezet, waardoor de zou
         assert.equal(fout,
           ERR_REQUIRE + ' revert Alle geboekte dagen zijn opgebruikt -- Reason given: Alle geboekte dagen zijn opgebruikt.',
           'Verkeerde foutmelding')
@@ -282,7 +283,7 @@ contract('HotelKamer', (accounts) => {
       await kamerContract.Reset()
       await kamerContract.ZetVrij()
       const kamer = await kamerContract.kamer.call()
-      assert.equal(kamer.Status, 0, 'Status moet nu terug vrij (0) zijn ')
+      assert.isTrue(kamer.Beschikbaar, 'Status moet nu terug vrij (0) zijn ')
     })
   })
 })

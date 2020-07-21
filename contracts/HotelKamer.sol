@@ -7,13 +7,13 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract HotelKamer is Ownable, Pausable {
     using SafeMath for uint256;
 
-    enum KamerStatus {Vrij, Geboekt, Onbeschikbaar}
+    //  enum KamerStatus {Vrij, Geboekt, Onbeschikbaar}
 
     struct Kamer {
-        uint256 Nummer;
-        KamerStatus Status;
+        //  uint8 Nummer;
+        uint8 AantalGeboekteDagen;
         uint256 Prijs; // in wei
-        uint256 AantalGeboekteDagen;
+        bool Beschikbaar;
         address Boeker;
     }
 
@@ -28,7 +28,7 @@ contract HotelKamer is Ownable, Pausable {
         _;
     }
     modifier KamerMoetVrijZijn() {
-        require(kamer.Status == KamerStatus.Vrij, "Kamer is niet vrij");
+        require(kamer.Beschikbaar, "Kamer is niet vrij");
         _;
     }
     modifier BeschikbareGeboekteDagen() {
@@ -51,16 +51,16 @@ contract HotelKamer is Ownable, Pausable {
     }
 
     function ZetGeboekt() external onlyOwner whenNotPaused() {
-        kamer.Status = KamerStatus.Geboekt;
+        kamer.Beschikbaar = false;
     }
 
     function ZetVrij() external onlyOwner whenNotPaused() {
-        kamer.Status = KamerStatus.Vrij;
+        kamer.Beschikbaar = true;
     }
 
     function Reset() public onlyOwner {
         if (paused()) _unpause();
-        kamer.Status = KamerStatus.Vrij;
+        kamer.Beschikbaar = true;
         kamer.Prijs = 0.1 ether;
         kamer.AantalGeboekteDagen = 0;
         kamer.Boeker = address(this); // default to contract address
@@ -69,30 +69,34 @@ contract HotelKamer is Ownable, Pausable {
     function MaakBoeking()
         external
         payable
-        BetalingHogerDanPrijs(msg.value)
-        KamerMoetVrijZijn
         whenNotPaused()
+        KamerMoetVrijZijn
+        BetalingHogerDanPrijs(msg.value)
     {
-        kamer.Status = KamerStatus.Geboekt;
-        kamer.AantalGeboekteDagen = SafeMath.div(msg.value, kamer.Prijs);
+        kamer.Beschikbaar = false;
+        kamer.AantalGeboekteDagen = uint8(SafeMath.div(msg.value, kamer.Prijs));
         kamer.Boeker = msg.sender;
     }
 
     function Uitbetaling() external onlyOwner() {
-        // (bool success, ) = msg.sender.call{value: address(this).balance}("");
         bool success = msg.sender.send(address(this).balance);
         require(success, "Transfer failed.");
     }
 
+    /* volgorde van de modifiers is belangrijk !
+   Als laatste geboekte dag is opgebruikt zal de Boeker op de contract adres gezet worden (null bestaat niet in Solidity)
+   Dus moet BeschikbareGeboekteDagen gecheckt worden voor EnkelDoorBoeker
+ */
     function OpenDeur()
         external
         whenNotPaused()
-        EnkelDoorBoeker
         BeschikbareGeboekteDagen
+        EnkelDoorBoeker
     {
-        kamer.AantalGeboekteDagen = SafeMath.sub(kamer.AantalGeboekteDagen, 1);
+        // TODO SafeMath8
+        kamer.AantalGeboekteDagen--;
         if (kamer.AantalGeboekteDagen == 0) {
-            kamer.Status = KamerStatus.Vrij;
+            kamer.Beschikbaar = true;
             kamer.Boeker = address(this); // default to contract address
         }
     }
