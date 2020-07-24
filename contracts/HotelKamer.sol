@@ -4,8 +4,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import "./SafeMath8.sol";
+
 contract HotelKamer is Ownable, Pausable {
     using SafeMath for uint256;
+    using SafeMath8 for uint8;
 
     //  enum KamerStatus {Vrij, Geboekt, Onbeschikbaar}
 
@@ -20,7 +23,10 @@ contract HotelKamer is Ownable, Pausable {
     Kamer public kamer;
 
     constructor() public Pausable() {
-        Reset();
+        kamer.Beschikbaar = true;
+        kamer.Prijs = 0.1 ether;
+        kamer.AantalGeboekteDagen = 0;
+        kamer.Boeker = address(this); // default to contract address
     }
 
     modifier BetalingHogerDanPrijs(uint256 _betaling) {
@@ -60,10 +66,6 @@ contract HotelKamer is Ownable, Pausable {
 
     function Reset() public onlyOwner {
         if (paused()) _unpause();
-        kamer.Beschikbaar = true;
-        kamer.Prijs = 0.1 ether;
-        kamer.AantalGeboekteDagen = 0;
-        kamer.Boeker = address(this); // default to contract address
     }
 
     function MaakBoeking()

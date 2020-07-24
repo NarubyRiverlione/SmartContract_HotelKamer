@@ -6,7 +6,7 @@ const KamerContract = artifacts.require('HotelKamer')
 const ERR_REQUIRE = 'Error: Returned error: VM Exception while processing transaction:'
 
 /*
- Bij elke test run wordt het contract opnieuw gepubliceerd
+ Bij elke test wordt het contract opnieuw gepubliceerd
  ==> telkens nieuw contract adres --> aanpassing nodig in Client
  ==> niet runnen op Ganache UI maar op Ganache CLi zodat er scheiding is van Test en Client
 */
@@ -14,12 +14,11 @@ contract('HotelKamer', (accounts) => {
   let kamerContract
   const StandaardPrijs = web3.utils.toWei('0.1', 'ether')
 
-  before(async () => {
-    kamerContract = await KamerContract.deployed()
-    console.log(`Contract adres = ${kamerContract.address}`)
-  })
   beforeEach(async () => {
-    await kamerContract.Reset()
+    // voor elke test steeds een nieuw smart contract gepubliceerd 
+    // zodat er een clean startpunt is voor de test
+    kamerContract = await KamerContract.new()
+    //console.log(`Contract adres = ${kamerContract.address}`)  
   })
 
   describe('Initiële contract waarden', () => {

@@ -6,6 +6,7 @@
   "directories": {
     "test": "test"
   },
+  "repository": "github:https://github.com/NarubyRiverlione/SmartContract_HotelKamer",
   "scripts": {
     "test": "truffle test",
     "coverage": "truffle run coverage",
@@ -27,6 +28,9 @@
     "truffle": "^5.1.35"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.1.0"
+    "@codechecks/client": "^0.1.10",
+    "@nomiclabs/buidler": "^1.3.8",
+    "@openzeppelin/contracts": "^3.1.0",
+    "eth-gas-reporter": "^0.2.17"
   }
 }
